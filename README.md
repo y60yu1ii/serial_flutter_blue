@@ -1,14 +1,14 @@
 # serial_flutterblue
 
-A new Flutter package project.
+Package to easily integrate UART/Serial over Bluetooth Low Energy into your Flutter app.
+Based on https://github.com/itavero/flutter-ble-uart
+Add some modification to make it better and more stable
 
 ## Getting Started
 
-This project is a starting point for a Dart
-[package](https://flutter.dev/developing-packages/),
-a library module containing code that can be shared easily across
-multiple Flutter or Dart projects.
-
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+Add it to your `pubspec.yaml` like this:
+```
+dependencies:
+  serial_flutterblue:
+      git: git@github.com
+```
