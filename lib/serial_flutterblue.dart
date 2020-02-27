@@ -9,4 +9,3 @@ part 'exceptions.dart';
 part 'uart_config.dart';
 part 'ble_provider.dart';
 part 'serial_connection.dart';
-

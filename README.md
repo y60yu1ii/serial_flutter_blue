@@ -8,7 +8,7 @@
 
 - Add it to your `pubspec.yaml` like this:
 
-``` dart
+``` yaml
 
 dependencies:
   serial_flutterblue:
@@ -16,6 +16,7 @@ dependencies:
 ```
 
 - Extend the uartconfig clas if you are not using the Nordic UART service UUID, or you wish to set up MTU
+- Create a files, say `myconfig.dart`, and add the following,
 
 ``` dart
 
@@ -38,3 +39,12 @@ class MyConfig extends UartConfig {
 
 ```
 
+- And set it to config before you use it.
+
+```dart
+    provider.config = MyConfig();
+```
+
+## Changes
+
+- add a counter to deal with the issue that getting disconnected before connected on some of the android phones.
