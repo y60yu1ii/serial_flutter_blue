@@ -1,7 +1,7 @@
-import 'package:flutter_blue/flutter_blue.dart';
-import 'SerialConnection.dart';
-import 'UartConfig.dart';
-
+//import 'package:flutter_blue/flutter_blue.dart';
+//import 'serial_connection.dart';
+//import 'uart_config.dart';
+part of serial_flutterblue;
 /// Base class for all exceptions that can be thrown from [SerialConnection].
 class SerialConnectionException implements Exception {
   final String cause;

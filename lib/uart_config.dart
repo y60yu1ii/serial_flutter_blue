@@ -1,5 +1,5 @@
-import 'package:flutter_blue/flutter_blue.dart';
-
+//import 'package:flutter_blue/flutter_blue.dart';
+part of serial_flutterblue;
 class UartConfig {
   final Guid serviceId;
   final Guid txId;

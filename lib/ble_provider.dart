@@ -1,8 +1,8 @@
-import 'dart:async';
-import 'package:flutter_blue/flutter_blue.dart';
-import 'uart_config.dart';
-import 'serial_connection.dart';
-
+//import 'dart:async';
+//import 'package:flutter_blue/flutter_blue.dart';
+//import 'uart_config.dart';
+//import 'serial_connection.dart';
+part of serial_flutterblue;
 //modified from flutter-bl-uart
 //https://github.com/itavero/flutter-ble-uart/blob/master/lib/src/serial_connection_provider.dart
 
