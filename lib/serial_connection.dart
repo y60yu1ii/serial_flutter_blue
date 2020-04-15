@@ -156,7 +156,11 @@ class SerialConnection {
     }
 
     if (timeout == null) {
-      timeout = Duration(seconds: 10);
+      if(Platform.isAndroid){
+        timeout = Duration(seconds: 15);
+      }else{
+        timeout = Duration(seconds: 10);
+      }
     }
 
     // Set-up timeout
