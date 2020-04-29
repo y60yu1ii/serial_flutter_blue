@@ -195,16 +195,19 @@ class SerialConnection {
 
   /// Send raw data (bytes) over the connection.
   Future<void> sendRawData(List<int> raw) async {
-    log("sending ${utf8.decode(raw)}");
     if (_state != SerialConnectionState.connected ||
         _txCharacteristic == null) {
       throw SerialConnectionNotReadyException();
     }
 
+    log("sending $raw");
+//    log("sending ${utf8.decode(raw)}");
+
     int offset = 0;
     final int chunkSize = _provider.config.mtuSize;
     while (offset < raw.length) {
       var chunk = raw.skip(offset).take(chunkSize).toList();
+      log(".. chunk $chunk");
       offset += chunkSize;
       await _txCharacteristic.write(chunk,
           withoutResponse: isWriteWithoutResponse);
