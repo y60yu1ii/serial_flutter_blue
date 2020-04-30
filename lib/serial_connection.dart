@@ -200,14 +200,14 @@ class SerialConnection {
       throw SerialConnectionNotReadyException();
     }
 
-    log("sending $raw");
+//    log("sending $raw");
 //    log("sending ${utf8.decode(raw)}");
 
     int offset = 0;
     final int chunkSize = _provider.config.mtuSize;
     while (offset < raw.length) {
       var chunk = raw.skip(offset).take(chunkSize).toList();
-      log(".. chunk $chunk");
+//      log(".. chunk $chunk");
       offset += chunkSize;
       await _txCharacteristic.write(chunk,
           withoutResponse: isWriteWithoutResponse);
