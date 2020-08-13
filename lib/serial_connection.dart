@@ -9,6 +9,7 @@ part of serial_flutterblue;
 
 class SerialConnection {
   int reconnectCounter = 0; //for android
+  int sendDelay = 0;//for device that too slow
 
   final BleProvider _provider;
   final BluetoothDevice _device;
@@ -47,6 +48,10 @@ class SerialConnection {
 
   //define Tx write type from properties
   bool isWriteWithoutResponse = false;
+
+  void setSendDelay(int delay){
+   sendDelay = delay;
+  }
 
   void _updateState(SerialConnectionState state) {
     if (_state != state) {
@@ -212,6 +217,7 @@ class SerialConnection {
       offset += chunkSize;
       await _txCharacteristic.write(chunk,
           withoutResponse: isWriteWithoutResponse);
+      await Future.delayed(Duration(milliseconds: sendDelay));
     }
   }
 
