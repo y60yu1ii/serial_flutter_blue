@@ -1,8 +1,7 @@
 name: serial_flutterblue
 description: A serial flutterblue based on https://github.com/itavero/flutter-ble-uart/
-version: 0.0.1
+version: 0.0.2
 author: y60yu1ii
-homepage:
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
