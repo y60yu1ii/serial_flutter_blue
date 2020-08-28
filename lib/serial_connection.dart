@@ -21,6 +21,9 @@ class SerialConnection {
   final StreamController<String> _onTextReceivedController =
       StreamController<String>.broadcast();
 
+  final StreamController<int> _onChunkIndexUpdateController =
+  StreamController<int>.broadcast();
+
   SerialConnectionState _state = SerialConnectionState.disconnected;
   BluetoothCharacteristic _txCharacteristic;
   BluetoothCharacteristic _rxCharacteristic;
@@ -37,6 +40,9 @@ class SerialConnection {
 
   /// Subscribe/listen to get incoming data after it is decode as UTF-8 string.
   Stream<String> get onTextReceived => _onTextReceivedController.stream;
+
+  //Subscribe/listen to get updates of chunk index, could be used as sending progress
+  Stream<int> get onChunkIndexUpdated => _onChunkIndexUpdateController.stream;
 
   /// Device which this instance was created with.
   BluetoothDevice get device => _device;
@@ -198,6 +204,7 @@ class SerialConnection {
     await disconnect();
     await _onTextReceivedController?.close();
     await _onDataReceivedController?.close();
+    await _onChunkIndexUpdateController?.close();
     await _onStateChangeController?.close();
     _state = SerialConnectionState.disconnected;
   }
@@ -221,6 +228,9 @@ class SerialConnection {
       await _txCharacteristic.write(chunk,
           withoutResponse: isWriteWithoutResponse);
       await Future.delayed(Duration(milliseconds: sendDelay));
+      if (_onChunkIndexUpdateController.hasListener) {
+        _onChunkIndexUpdateController.add(offset);
+      }
     }
   }
 
