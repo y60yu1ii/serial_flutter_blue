@@ -247,7 +247,7 @@ class SerialConnection {
       _updateState(SerialConnectionState.disconnecting);
       _txCharacteristic = null;
       if (_rxCharacteristic != null) {
-        await _rxCharacteristic.setNotifyValue(true);
+        await _rxCharacteristic.setNotifyValue(false);
       }
       _rxCharacteristic = null;
       _incomingDataSubscription?.cancel();
