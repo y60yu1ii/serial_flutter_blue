@@ -9,7 +9,7 @@ part of serial_flutterblue;
 
 class SerialConnection {
   int reconnectCounter = 0; //for android
-  int sendDelay = 0;//for device that too slow
+  int sendDelay = 0; //for device that too slow
 
   final BleProvider _provider;
   final BluetoothDevice _device;
@@ -22,7 +22,7 @@ class SerialConnection {
       StreamController<String>.broadcast();
 
   final StreamController<int> _onChunkIndexUpdateController =
-  StreamController<int>.broadcast();
+      StreamController<int>.broadcast();
 
   SerialConnectionState _state = SerialConnectionState.disconnected;
   BluetoothCharacteristic _txCharacteristic;
@@ -55,8 +55,8 @@ class SerialConnection {
   //define Tx write type from properties
   bool isWriteWithoutResponse = false;
 
-  void setSendDelay(int delay){
-   sendDelay = delay;
+  void setSendDelay(int delay) {
+    sendDelay = delay;
   }
 
   void _updateState(SerialConnectionState state) {
@@ -167,16 +167,17 @@ class SerialConnection {
     }
 
     if (timeout == null) {
-      if(Platform.isAndroid){
+      if (Platform.isAndroid) {
         timeout = Duration(seconds: 15);
-      }else{
+      } else {
         timeout = Duration(seconds: 10);
       }
     }
 
     // Set-up timeout
     Future.delayed(timeout, () {
-      if (_state != SerialConnectionState.connected) {
+      if (_state != SerialConnectionState.connected ||
+          _state != SerialConnectionState.subscribing) {
         disconnect();
         log('SerialConnection $deviceId: Cancelled connection attempt due to timeout');
       }
