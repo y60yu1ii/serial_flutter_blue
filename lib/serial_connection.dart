@@ -176,10 +176,9 @@ class SerialConnection {
 
     // Set-up timeout
     Future.delayed(timeout, () {
-      if (_state != SerialConnectionState.connected ||
-          _state != SerialConnectionState.subscribing) {
+      if (_state == SerialConnectionState.connecting) {
+        log('SerialConnection $deviceId: Cancelled connection attempt due to timeout, origin state is $_state');
         disconnect();
-        log('SerialConnection $deviceId: Cancelled connection attempt due to timeout');
       }
     });
 
