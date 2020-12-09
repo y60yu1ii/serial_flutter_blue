@@ -204,10 +204,21 @@ class SerialConnection {
     // Connect to device
     _updateState(SerialConnectionState.connecting);
 
-    _peripheral.connect(
-      refreshGatt: true,
-      isAutoConnect: false,
-    );
+    try {
+      _deviceConnection = _peripheral
+          .observeConnectionState(
+          emitCurrentValue: false, completeOnDisconnect: true)
+          .listen(_handlePeripheralState);
+
+      _peripheral.connect(
+        refreshGatt: true,
+        isAutoConnect: false,
+      );
+
+    } on Exception catch (ex) {
+      print('SerialConnection exception during connect: ${ex.toString()}');
+      disconnect();
+    }
   }
 
   /// Close the connection entirely.
