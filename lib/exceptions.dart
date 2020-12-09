@@ -1,5 +1,5 @@
 import 'serial_connection.dart';
-import 'package:serial_flutterblue/uart_config.dart';
+import 'package:serial_flutterblue/uart_config.dart' show UartConfig;
 // Base class for all exceptions that can be thrown from [SerialConnection].
 class SerialConnectionException implements Exception {
   final String cause;
@@ -33,7 +33,7 @@ class SerialConnectionServiceNotFoundException
 class SerialConnectionCharacteristicNotFoundException
     extends SerialConnectionException {
   SerialConnectionCharacteristicNotFoundException(String characteristicId)
-      : super('Characteristic with identifier ${characteristicId}'
+      : super('Characteristic with identifier $characteristicId'
       ' was not found.');
 }
 

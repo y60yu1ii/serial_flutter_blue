@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_ble_lib/flutter_ble_lib.dart';
-import 'package:serial_flutterblue/uart_config.dart';
+import 'uart_config.dart' show MyDevice1, UartConfig;
 import 'package:serial_flutterblue/serial_connection.dart';
 // modified from flutter-bl-uart
 //https://github.com/itavero/flutter-ble-uart/blob/master/lib/src/serial_connection_provider.dart
