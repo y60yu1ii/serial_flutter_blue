@@ -1,6 +1,6 @@
 library serial_flutterblue;
 
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter_ble_lib/flutter_ble_lib.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';

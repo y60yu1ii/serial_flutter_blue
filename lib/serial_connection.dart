@@ -1,35 +1,38 @@
-//import 'dart:async';
-//import 'dart:convert';
-//import 'package:flutter_blue/flutter_blue.dart';
-//import 'exceptions.dart';
-//import 'ble_provider.dart';
-//import 'dart:developer';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
-part of serial_flutterblue;
+import 'package:flutter_ble_lib/flutter_ble_lib.dart';
+
+import 'ble_provider.dart';
+import 'exceptions.dart';
 
 class SerialConnection {
   int reconnectCounter = 0; //for android
   int sendDelay = 0; //for device that too slow
 
   final BleProvider _provider;
-  final BluetoothDevice _device;
+  final Peripheral _peripheral;
+
   final StreamController<SerialConnectionState> _onStateChangeController =
-      StreamController<SerialConnectionState>.broadcast();
+  StreamController<SerialConnectionState>.broadcast();
   final StreamController<List<int>> _onDataReceivedController =
-      StreamController<List<int>>.broadcast();
+  StreamController<List<int>>.broadcast();
 
   final StreamController<String> _onTextReceivedController =
-      StreamController<String>.broadcast();
+  StreamController<String>.broadcast();
 
   final StreamController<int> _onChunkIndexUpdateController =
-      StreamController<int>.broadcast();
+  StreamController<int>.broadcast();
 
   SerialConnectionState _state = SerialConnectionState.disconnected;
-  BluetoothCharacteristic _txCharacteristic;
-  BluetoothCharacteristic _rxCharacteristic;
+  Characteristic _txCharacteristic;
+  Characteristic _rxCharacteristic;
   StreamSubscription _deviceConnection;
   StreamSubscription _deviceStateSubscription;
   StreamSubscription _incomingDataSubscription;
+  bool isReceiving = false;
 
   /// Subscribe/listen to get notified of state changes.
   Stream<SerialConnectionState> get onStateChange =>
@@ -45,15 +48,17 @@ class SerialConnection {
   Stream<int> get onChunkIndexUpdated => _onChunkIndexUpdateController.stream;
 
   /// Device which this instance was created with.
-  BluetoothDevice get device => _device;
+  Peripheral get peripheral => _peripheral;
 
-  /// String representation of the [BluetoothDevice] identifier.
-  String get deviceId => _device.id.toString();
+  String get deviceId => _peripheral.identifier.toString();
 
-  SerialConnection(this._provider, this._device);
+  SerialConnection(this._provider, this._peripheral);
 
   //define Tx write type from properties
   bool isWriteWithoutResponse = false;
+
+  bool isWriting = false;
+  var connectionError;
 
   void setSendDelay(int delay) {
     sendDelay = delay;
@@ -85,70 +90,97 @@ class SerialConnection {
     }
   }
 
-  Future<void> _handleBluetoothDeviceState(
-      BluetoothDeviceState deviceState) async {
-    if (deviceState == BluetoothDeviceState.connected) {
-      reconnectCounter = 0;
+  Future<void> _handlePeripheralState(
+      PeripheralConnectionState connectionState) async {
+    print("====================== state connection is $connectionState");
+    if (connectionState == PeripheralConnectionState.connected) {
+      if (Platform.isAndroid) {
+        await Future.delayed(
+            Duration(milliseconds: 1600)); //await 1600ms like nrfconnect
+      }
       await _discoverServices();
-    } else if (deviceState == BluetoothDeviceState.disconnected) {
-      if (_state == SerialConnectionState.connecting && reconnectCounter < 3) {
-        reconnectCounter++;
-        return;
-      } //reconnect protection for android
       reconnectCounter = 0;
-      _txCharacteristic = null;
-      _rxCharacteristic = null;
-      _incomingDataSubscription?.cancel();
-      _incomingDataSubscription = null;
-      _deviceStateSubscription?.cancel();
-      _deviceStateSubscription = null;
-      _deviceConnection?.cancel();
-      _deviceConnection = null;
-      _updateState(SerialConnectionState.disconnected);
-//      log("disconnected start check state is $_state");
+    } else if (connectionState == PeripheralConnectionState.disconnected) {
+      disconnect();
     }
   }
 
   Future<void> _discoverServices() async {
     _updateState(SerialConnectionState.discovering);
+    await _peripheral.discoverAllServicesAndCharacteristics(
+        transactionId: "discovery");
+    List<Service> services =
+    await _peripheral.services(); //getting all services
+    //find pre-defined characteristics (provide configs) from all services
+    List<Characteristic> characteristics = await services
+        .firstWhere((service) =>
+    service.uuid.toLowerCase() ==
+        _provider.config.serviceId.toLowerCase())
+        .characteristics();
 
-    // Search for serial service
-    List<BluetoothService> services = await _device.discoverServices();
-
-    BluetoothService serialService =
-        services.firstWhere((s) => s.uuid == _provider.config.serviceId);
+    Service serialService = services.firstWhere((s) =>
+    s.uuid.toLowerCase() == _provider.config.serviceId.toLowerCase());
     if (serialService == null) {
-      await disconnect();
-      log('BLE UART service NOT found on device $deviceId');
+      disconnect();
+      print('BLE UART service NOT found on device $deviceId');
       throw SerialConnectionServiceNotFoundException(_provider.config);
-    } else {}
+    }
+
+    _updateState(SerialConnectionState.subscribing);
 
     _txCharacteristic =
-        _findCharacteristic(serialService, _provider.config.txId);
+        _findCharacteristic(characteristics, _provider.config.txId);
     _rxCharacteristic =
-        _findCharacteristic(serialService, _provider.config.rxId);
+        _findCharacteristic(characteristics, _provider.config.rxId);
 
-    isWriteWithoutResponse = _txCharacteristic.properties.writeWithoutResponse;
+    isWriteWithoutResponse = _txCharacteristic.isWritableWithoutResponse;
 
-    // Set up notifications for RX characteristic
-    _updateState(SerialConnectionState.subscribing);
-    await _rxCharacteristic.setNotifyValue(true);
-    _incomingDataSubscription?.cancel();
-    _incomingDataSubscription = _rxCharacteristic.value.listen(_onIncomingData);
+    // Set up notifications for RX characteristic(notify)
+    if (_rxCharacteristic.isNotifiable) {
+      _incomingDataSubscription?.cancel();
+      _rxCharacteristic
+          .monitor(transactionId: "monitor")
+          .listen(_onIncomingData);
+    }
     // Done!
     _updateState(SerialConnectionState.connected);
   }
 
-  BluetoothCharacteristic _findCharacteristic(
-      BluetoothService service, Guid characteristicId) {
-    BluetoothCharacteristic characteristic =
-        service.characteristics.firstWhere((c) => c.uuid == characteristicId);
-    if (characteristic == null) {
-      log('BLE UART Characteristic (${characteristicId.toString()} NOT '
+  Characteristic _findCharacteristic(
+      List<Characteristic> characteristics, String characteristicId) {
+    Characteristic ch = characteristics.firstWhere(
+            (c) => c.uuid.toLowerCase() == characteristicId.toLowerCase());
+    if (ch == null) {
+      print('BLE UART Characteristic (${characteristicId.toString()} NOT '
           'found on device $deviceId.');
       throw SerialConnectionCharacteristicNotFoundException(characteristicId);
     }
-    return characteristic;
+    return ch;
+  }
+
+  /// Disconnect from the device
+  Future<void> disconnect() async {
+    if (_state != SerialConnectionState.disconnected) {
+      _updateState(SerialConnectionState.disconnecting);
+    }
+    if (_rxCharacteristic != null) {
+      await _provider.bleManager.cancelTransaction("monitor");
+    }
+    await _peripheral.disconnectOrCancelConnection();
+
+    // await _provider.bleManager.cancelTransaction("discovery");
+    await _provider.bleManager.destroyClient();
+
+    _incomingDataSubscription?.cancel();
+    _deviceStateSubscription?.cancel();
+    _deviceConnection?.cancel();
+    _deviceConnection = null;
+    _txCharacteristic = null;
+    _rxCharacteristic = null;
+    _incomingDataSubscription = null;
+    _deviceStateSubscription = null;
+
+    _updateState(SerialConnectionState.disconnected);
   }
 
   /// Connect to the device over Bluetooth LE.
@@ -165,34 +197,25 @@ class SerialConnection {
     if (_state != SerialConnectionState.disconnected) {
       throw SerialConnectionWrongStateException(_state);
     }
-
     if (timeout == null) {
-      if (Platform.isAndroid) {
-        timeout = Duration(seconds: 15);
-      } else {
-        timeout = Duration(seconds: 10);
-      }
+      timeout = Duration(seconds: 30);
     }
-
-    // Set-up timeout
-    Future.delayed(timeout, () {
+    // Set-up timeout for connect attempt
+    Future.delayed(timeout, () async {
       if (_state == SerialConnectionState.connecting) {
-        log('SerialConnection $deviceId: Cancelled connection attempt due to timeout, origin state is $_state');
+        // print(
+        //     'SerialConnection $deviceId: Cancelled connection attempt due to timeout, origin state is $_state');
         disconnect();
       }
+      // print("time out running");
     });
-
     // Connect to device
     _updateState(SerialConnectionState.connecting);
-    try {
-//      _provider.stopScan();
-      _device.connect(autoConnect: false);
-      _deviceStateSubscription =
-          _device.state.listen(_handleBluetoothDeviceState);
-    } on Exception catch (ex) {
-      log('SerialConnection exception during connect: ${ex.toString()}');
-      disconnect();
-    }
+
+    _peripheral.connect(
+      refreshGatt: true,
+      isAutoConnect: false,
+    );
   }
 
   /// Close the connection entirely.
@@ -201,7 +224,8 @@ class SerialConnection {
   /// This should be called for instance when your app is shutdown or the
   /// page that is using this connection is exited (disposed).
   Future<void> close() async {
-    await disconnect();
+    reconnectCounter = 0;
+    disconnect();
     await _onTextReceivedController?.close();
     await _onDataReceivedController?.close();
     await _onChunkIndexUpdateController?.close();
@@ -210,59 +234,50 @@ class SerialConnection {
   }
 
   /// Send raw data (bytes) over the connection.
+  /// important !!!
+  /// Every raw data should chopped in to small chunks with MTU Size
+  ///
   Future<void> sendRawData(List<int> raw) async {
+    if (isWriting) return;
+    isWriting = true;
     if (_state != SerialConnectionState.connected ||
         _txCharacteristic == null) {
+      isWriting = false;
       throw SerialConnectionNotReadyException();
     }
-
-//    log("sending $raw");
-//    log("sending ${utf8.decode(raw)}");
-
     int offset = 0;
     final int chunkSize = _provider.config.mtuSize;
     while (offset < raw.length) {
       var chunk = raw.skip(offset).take(chunkSize).toList();
-//      log(".. chunk $chunk");
+      // print(".. chunk $chunk");
       offset += chunkSize;
-      await _txCharacteristic.write(chunk,
-          withoutResponse: isWriteWithoutResponse);
-      await Future.delayed(Duration(milliseconds: sendDelay));
+      await _txCharacteristic.write(Uint8List.fromList(chunk),
+          !isWriteWithoutResponse); //write with response
       if (_onChunkIndexUpdateController.hasListener) {
         _onChunkIndexUpdateController.add(offset);
       }
+      //pre set delays
+      await Future.delayed(Duration(milliseconds: sendDelay));
     }
+    isWriting = false;
   }
 
   /// Send a text string over the connection.
-  ///
   /// The text will be UTF-8 encoded before being transmitted.
   Future<void> sendText(String text) async {
     await sendRawData(utf8.encode(text));
   }
 
-  /// Disconnect from the device
-  Future<void> disconnect() async {
-    if (_state != SerialConnectionState.disconnected) {
-      _updateState(SerialConnectionState.disconnecting);
-      _txCharacteristic = null;
-      if (_rxCharacteristic != null) {
-        await _rxCharacteristic.setNotifyValue(false);
-      }
-      _rxCharacteristic = null;
-      _incomingDataSubscription?.cancel();
-      _incomingDataSubscription = null;
-      _deviceStateSubscription?.cancel();
-      _deviceStateSubscription = null;
-      _deviceConnection?.cancel();
-      _deviceConnection = null;
-      _updateState(SerialConnectionState.disconnected);
+  Future<int> readRSSI() async {
+    if (_state == SerialConnectionState.connected) {
+      return await _peripheral?.rssi();
+    } else {
+      return 127;
     }
-    await _device.disconnect();
   }
 }
 
-/// Represents the current state of a [SerialConnection]
+// /// Represents the current state of a [SerialConnection]
 enum SerialConnectionState {
   /// Disconnected.
   disconnected,

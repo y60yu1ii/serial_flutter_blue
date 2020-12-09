@@ -1,59 +1,44 @@
-//import 'dart:async';
-//import 'package:flutter_blue/flutter_blue.dart';
-//import 'uart_config.dart';
-//import 'serial_connection.dart';
-part of serial_flutterblue;
-//modified from flutter-bl-uart
+import 'dart:async';
+import 'package:flutter_ble_lib/flutter_ble_lib.dart';
+import 'package:serial_flutterblue/uart_config.dart';
+import 'package:serial_flutterblue/serial_connection.dart';
+// modified from flutter-bl-uart
 //https://github.com/itavero/flutter-ble-uart/blob/master/lib/src/serial_connection_provider.dart
 
 class BleProvider {
   static final BleProvider _singleton = BleProvider._internal();
   UartConfig config;
-  FlutterBlue ble = FlutterBlue.instance;
+  BleManager bleManager = BleManager();
 
   factory BleProvider() {
     return _singleton;
   }
 
   BleProvider._internal() {
-    config = MyDeviceConfig();
+    config = MyDevice1();
   }
 
-  SerialConnection init(BluetoothDevice device) {
-    return SerialConnection(this, device);
+  Future<void> setupBleManager() async {
+    await bleManager.createClient(); //ready to go!
+  }
+
+  Future<void> releaseManager() async{
+    await bleManager.destroyClient(); //remember to release native resources when you're done!
+  }
+
+  SerialConnection init(Peripheral peripheral) {
+    return SerialConnection(this, peripheral);
   }
 
   /// Starts a scan for Bluetooth LE devices that advertise the UART Service.
-  ///
-  /// Internally this calls the [FlutterBlue.scan] method.
-  Stream<ScanResult> scan(
-      {ScanMode scanMode = ScanMode.lowLatency,
-      List<Guid> withDevices = const [],
-      Duration timeout}) async* {
-    yield* ble.scan(
-        scanMode: scanMode,
-        withServices: [],
-        withDevices: withDevices,
-        timeout: timeout);
+  Stream<ScanResult> scan({
+    List<String> uuids = const[],
+  }) async* {
+    yield* bleManager.startPeripheralScan(scanMode: ScanMode.lowLatency, uuids: uuids, allowDuplicates: false, callbackType: CallbackType.allMatches);
   }
 
-  void stopScan() {
-    ble.stopScan();
+  Future<void> stopScan() async{
+    await bleManager.stopPeripheralScan();
   }
 
-  /// Scan for a fixed duration and return all discovered devices afterwards.
-  ///
-  /// Internally this calls [scan] with the given timeout. By default
-  /// the timeout is set to 10 seconds.
-  Future<Iterable<BluetoothDevice>> simplifiedScan({Duration timeout}) async {
-    if (timeout == null) {
-      timeout = Duration(seconds: 10);
-    }
-
-    Map<String, BluetoothDevice> devices = {};
-    devices.addEntries(await scan(timeout: timeout)
-        .map((sr) => MapEntry(sr.device.id.id, sr.device))
-        .toList());
-    return devices.values;
-  }
 }

@@ -1,8 +1,6 @@
-//import 'package:flutter_blue/flutter_blue.dart';
-//import 'serial_connection.dart';
-//import 'uart_config.dart';
-part of serial_flutterblue;
-/// Base class for all exceptions that can be thrown from [SerialConnection].
+import 'serial_connection.dart';
+import 'package:serial_flutterblue/uart_config.dart';
+// Base class for all exceptions that can be thrown from [SerialConnection].
 class SerialConnectionException implements Exception {
   final String cause;
 
@@ -18,7 +16,7 @@ class SerialConnectionException implements Exception {
 class SerialConnectionWrongStateException extends SerialConnectionException {
   SerialConnectionWrongStateException(SerialConnectionState currentState)
       : super('Operation cannot be performed, '
-            'because state is ${currentState.toString()}.');
+      'because state is ${currentState.toString()}.');
 }
 
 /// Thrown when trying to connect with a device that does advertise the
@@ -27,20 +25,20 @@ class SerialConnectionServiceNotFoundException
     extends SerialConnectionException {
   SerialConnectionServiceNotFoundException(UartConfig config)
       : super('Service with identifier ${config.serviceId.toString()}'
-            ' was not found.');
+      ' was not found.');
 }
 
-/// Thrown when any of the configured characteristics can not be found in the
-/// configured service.
+// Thrown when any of the configured characteristics can not be found in the
+// configured service.
 class SerialConnectionCharacteristicNotFoundException
     extends SerialConnectionException {
-  SerialConnectionCharacteristicNotFoundException(Guid characteristicId)
-      : super('Characteristic with identifier ${characteristicId.toString()}'
-            ' was not found.');
+  SerialConnectionCharacteristicNotFoundException(String characteristicId)
+      : super('Characteristic with identifier ${characteristicId}'
+      ' was not found.');
 }
 
 class SerialConnectionNotReadyException extends SerialConnectionException {
   SerialConnectionNotReadyException()
       : super('Serial connection is not yet ready to perform the requested'
-            ' operation.');
+      ' operation.');
 }
