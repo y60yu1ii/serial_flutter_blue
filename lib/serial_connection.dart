@@ -1,12 +1,4 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:flutter_ble_lib/flutter_ble_lib.dart';
-
-import 'ble_provider.dart';
-import 'exceptions.dart';
+part of serial_flutterblue;
 
 class SerialConnection {
   int reconnectCounter = 0; //for android

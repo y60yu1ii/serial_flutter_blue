@@ -10,9 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_ble_lib: ^2.3.1
-#  flutter_blue: 0.7.2
-#  flutter_blue:
-#    git: git@github.com:y60yu1ii/flutter_blue.git
+  permission_handler: ^5.0.1+1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
