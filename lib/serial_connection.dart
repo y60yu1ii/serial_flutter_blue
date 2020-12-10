@@ -1,7 +1,6 @@
 part of serial_flutterblue;
 
 class SerialConnection {
-  int reconnectCounter = 0; //for android
   int sendDelay = 0; //for device that too slow
 
   final BleProvider _provider;
@@ -56,6 +55,7 @@ class SerialConnection {
 
   void _updateState(SerialConnectionState state) {
     if (_state != state) {
+      print("was $_state and now $state");
       _state = state;
       if (_onStateChangeController.hasListener) {
         _onStateChangeController.add(state);
@@ -82,7 +82,7 @@ class SerialConnection {
 
   Future<void> _handlePeripheralState(
       PeripheralConnectionState connectionState) async {
-    // print("====================== state connection is $connectionState");
+    print("====================== state connection is $connectionState");
     if (connectionState == PeripheralConnectionState.connected) {
       await _discoverServices();
     } else if (connectionState == PeripheralConnectionState.disconnected) {
@@ -152,8 +152,6 @@ class SerialConnection {
       await _provider.bleManager.cancelTransaction("monitor");
     }
     await _peripheral.disconnectOrCancelConnection();
-    await _provider.bleManager.cancelTransaction("discovery");
-    _updateState(SerialConnectionState.disconnected);
 
     // await _provider.bleManager.destroyClient();
 
@@ -165,6 +163,7 @@ class SerialConnection {
     _rxCharacteristic = null;
     _incomingDataSubscription = null;
     _deviceStateSubscription = null;
+    _updateState(SerialConnectionState.disconnected);
   }
 
   /// Connect to the device over Bluetooth LE.
@@ -219,13 +218,11 @@ class SerialConnection {
   /// This should be called for instance when your app is shutdown or the
   /// page that is using this connection is exited (disposed).
   Future<void> close() async {
-    reconnectCounter = 0;
     disconnect();
     await _onTextReceivedController?.close();
     await _onDataReceivedController?.close();
     await _onChunkIndexUpdateController?.close();
     await _onStateChangeController?.close();
-    _state = SerialConnectionState.disconnected;
   }
 
   /// Send raw data (bytes) over the connection.
