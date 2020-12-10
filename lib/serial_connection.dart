@@ -55,7 +55,7 @@ class SerialConnection {
 
   void _updateState(SerialConnectionState state) {
     if (_state != state) {
-      print("was $_state and now $state");
+      // print("was $_state and now $state");
       _state = state;
       if (_onStateChangeController.hasListener) {
         _onStateChangeController.add(state);
@@ -82,7 +82,7 @@ class SerialConnection {
 
   Future<void> _handlePeripheralState(
       PeripheralConnectionState connectionState) async {
-    print("====================== state connection is $connectionState");
+    // print("====================== state connection is $connectionState");
     if (connectionState == PeripheralConnectionState.connected) {
       await _discoverServices();
     } else if (connectionState == PeripheralConnectionState.disconnected) {
