@@ -152,6 +152,15 @@ class SerialConnection {
       await _provider.bleManager.cancelTransaction("monitor");
     }
     await _peripheral.disconnectOrCancelConnection();
+
+    _incomingDataSubscription?.cancel();
+    _deviceStateSubscription?.cancel();
+    _deviceConnection?.cancel();
+    _deviceConnection = null;
+    _txCharacteristic = null;
+    _rxCharacteristic = null;
+    _incomingDataSubscription = null;
+    _deviceStateSubscription = null;
     _updateState(SerialConnectionState.disconnected);
   }
 
