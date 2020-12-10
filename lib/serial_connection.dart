@@ -152,19 +152,23 @@ class SerialConnection {
       await _provider.bleManager.cancelTransaction("monitor");
     }
     await _peripheral.disconnectOrCancelConnection();
-
-    // await _provider.bleManager.destroyClient();
-
-    _incomingDataSubscription?.cancel();
-    _deviceStateSubscription?.cancel();
-    _deviceConnection?.cancel();
-    _deviceConnection = null;
-    _txCharacteristic = null;
-    _rxCharacteristic = null;
-    _incomingDataSubscription = null;
-    _deviceStateSubscription = null;
     _updateState(SerialConnectionState.disconnected);
   }
+
+  /// Close the connection entirely.
+  ///
+  /// Note that you will *NOT* be able to use this instance afterwards.
+  /// This should be called for instance when your app is shutdown or the
+  /// page that is using this connection is exited (disposed).
+  Future<void> close() async {
+    await disconnect();
+    await _onTextReceivedController?.close();
+    await _onDataReceivedController?.close();
+    await _onChunkIndexUpdateController?.close();
+    await _onStateChangeController?.close();
+    await _provider.bleManager.destroyClient();
+  }
+
 
   /// Connect to the device over Bluetooth LE.
   ///
@@ -210,19 +214,6 @@ class SerialConnection {
       print('SerialConnection exception during connect: ${ex.toString()}');
       disconnect();
     }
-  }
-
-  /// Close the connection entirely.
-  ///
-  /// Note that you will *NOT* be able to use this instance afterwards.
-  /// This should be called for instance when your app is shutdown or the
-  /// page that is using this connection is exited (disposed).
-  Future<void> close() async {
-    disconnect();
-    await _onTextReceivedController?.close();
-    await _onDataReceivedController?.close();
-    await _onChunkIndexUpdateController?.close();
-    await _onStateChangeController?.close();
   }
 
   /// Send raw data (bytes) over the connection.
