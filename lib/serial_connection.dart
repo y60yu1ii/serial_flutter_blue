@@ -24,7 +24,6 @@ class SerialConnection {
   StreamSubscription _deviceConnection;
   StreamSubscription _deviceStateSubscription;
   StreamSubscription _incomingDataSubscription;
-  bool isReceiving = false;
 
   /// Subscribe/listen to get notified of state changes.
   Stream<SerialConnectionState> get onStateChange =>
@@ -49,7 +48,6 @@ class SerialConnection {
   //define Tx write type from properties
   bool isWriteWithoutResponse = false;
 
-  bool isWriting = false;
   var connectionError;
 
   void setSendDelay(int delay) {
@@ -84,14 +82,9 @@ class SerialConnection {
 
   Future<void> _handlePeripheralState(
       PeripheralConnectionState connectionState) async {
-    print("====================== state connection is $connectionState");
+    // print("====================== state connection is $connectionState");
     if (connectionState == PeripheralConnectionState.connected) {
-      if (Platform.isAndroid) {
-        await Future.delayed(
-            Duration(milliseconds: 1600)); //await 1600ms like nrfconnect
-      }
       await _discoverServices();
-      reconnectCounter = 0;
     } else if (connectionState == PeripheralConnectionState.disconnected) {
       disconnect();
     }
@@ -241,11 +234,8 @@ class SerialConnection {
   /// Every raw data should chopped in to small chunks with MTU Size
   ///
   Future<void> sendRawData(List<int> raw) async {
-    if (isWriting) return;
-    isWriting = true;
     if (_state != SerialConnectionState.connected ||
         _txCharacteristic == null) {
-      isWriting = false;
       throw SerialConnectionNotReadyException();
     }
     int offset = 0;
@@ -262,7 +252,6 @@ class SerialConnection {
       //pre set delays
       await Future.delayed(Duration(milliseconds: sendDelay));
     }
-    isWriting = false;
   }
 
   /// Send a text string over the connection.
