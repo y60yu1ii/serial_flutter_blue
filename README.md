@@ -3,6 +3,7 @@
 - Package to easily integrate UART/Serial over Bluetooth Low Energy into your Flutter app.
 - Based on https://github.com/itavero/flutter-ble-uart
 - Add some modification to make it better and more stable
+- Replace the backend from flutter_blue to flutter_ble_lib
 
 ## Getting Started
 
@@ -15,7 +16,7 @@ dependencies:
       git: git@github.com:y60yu1ii/serial_flutter_blue.git
 ```
 
-- Extend the uartconfig clas if you are not using the Nordic UART service UUID, or you wish to set up MTU
+- Extend the uartconfig class if you are not using the Nordic UART service UUID, or you wish to set up MTU
 - Create a files, say `myconfig.dart`, and add the following,
 
 ``` dart
@@ -25,7 +26,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 
 class MyConfig extends UartConfig {
   //nordic 128 short
-  static Guid TIShort(String input) {
+  static String TIShort(String input) {
     return Guid("0000$input-0000-1000-8000-00805f9b34fb");
   }
 
