@@ -152,11 +152,10 @@ class SerialConnection {
       await _provider.bleManager.cancelTransaction("monitor");
     }
     await _peripheral.disconnectOrCancelConnection();
-
-    // await _provider.bleManager.cancelTransaction("discovery");
-    await _provider.bleManager.destroyClient();
-
+    await _provider.bleManager.cancelTransaction("discovery");
     _updateState(SerialConnectionState.disconnected);
+
+    // await _provider.bleManager.destroyClient();
 
     _incomingDataSubscription?.cancel();
     _deviceStateSubscription?.cancel();
