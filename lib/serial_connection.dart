@@ -166,7 +166,6 @@ class SerialConnection {
     await _onDataReceivedController?.close();
     await _onChunkIndexUpdateController?.close();
     await _onStateChangeController?.close();
-    await _provider.bleManager.destroyClient();
   }
 
 
