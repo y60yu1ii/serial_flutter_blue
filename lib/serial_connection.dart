@@ -156,6 +156,8 @@ class SerialConnection {
     // await _provider.bleManager.cancelTransaction("discovery");
     await _provider.bleManager.destroyClient();
 
+    _updateState(SerialConnectionState.disconnected);
+
     _incomingDataSubscription?.cancel();
     _deviceStateSubscription?.cancel();
     _deviceConnection?.cancel();
@@ -164,8 +166,6 @@ class SerialConnection {
     _rxCharacteristic = null;
     _incomingDataSubscription = null;
     _deviceStateSubscription = null;
-
-    _updateState(SerialConnectionState.disconnected);
   }
 
   /// Connect to the device over Bluetooth LE.
