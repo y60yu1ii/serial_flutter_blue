@@ -86,7 +86,8 @@ class SerialConnection {
     if (connectionState == PeripheralConnectionState.connected) {
       await _discoverServices();
     } else if (connectionState == PeripheralConnectionState.disconnected) {
-      disconnect();
+      _updateState(SerialConnectionState.disconnected);
+      clearSubscriptions();
     }
   }
 
@@ -148,22 +149,15 @@ class SerialConnection {
     if (_state != SerialConnectionState.disconnected) {
       _updateState(SerialConnectionState.disconnecting);
     }
-
-    Future.delayed(Duration(seconds: 2), () async {
-      if (_state == SerialConnectionState.disconnecting) {
-        clearSubscriptions();
-        _updateState(SerialConnectionState.disconnected);
-      }
-    });
     if (_rxCharacteristic != null) {
       await _provider.bleManager.cancelTransaction("monitor");
     }
     await _peripheral.disconnectOrCancelConnection();
-    clearSubscriptions();
     _updateState(SerialConnectionState.disconnected);
+    clearSubscriptions();
   }
 
-  void clearSubscriptions(){
+  void clearSubscriptions() async{
     _incomingDataSubscription?.cancel();
     _deviceStateSubscription?.cancel();
     _deviceConnection?.cancel();
@@ -172,6 +166,10 @@ class SerialConnection {
     _rxCharacteristic = null;
     _incomingDataSubscription = null;
     _deviceStateSubscription = null;
+    await _onTextReceivedController?.close();
+    await _onDataReceivedController?.close();
+    await _onChunkIndexUpdateController?.close();
+    await _onStateChangeController?.close();
   }
 
   /// Close the connection entirely.
@@ -181,10 +179,7 @@ class SerialConnection {
   /// page that is using this connection is exited (disposed).
   Future<void> close() async {
     await disconnect();
-    await _onTextReceivedController?.close();
-    await _onDataReceivedController?.close();
-    await _onChunkIndexUpdateController?.close();
-    await _onStateChangeController?.close();
+    clearSubscriptions();
   }
 
 
