@@ -82,7 +82,7 @@ class SerialConnection {
 
   Future<void> _handlePeripheralState(
       PeripheralConnectionState connectionState) async {
-    // print("====================== state connection is $connectionState");
+    print("====================== state connection is $connectionState");
     if (connectionState == PeripheralConnectionState.connected) {
       await _discoverServices();
     } else if (connectionState == PeripheralConnectionState.disconnected) {
@@ -148,11 +148,22 @@ class SerialConnection {
     if (_state != SerialConnectionState.disconnected) {
       _updateState(SerialConnectionState.disconnecting);
     }
+
+    Future.delayed(Duration(seconds: 2), () async {
+      if (_state == SerialConnectionState.disconnecting) {
+        clearSubscriptions();
+        _updateState(SerialConnectionState.disconnected);
+      }
+    });
     if (_rxCharacteristic != null) {
       await _provider.bleManager.cancelTransaction("monitor");
     }
     await _peripheral.disconnectOrCancelConnection();
+    clearSubscriptions();
+    _updateState(SerialConnectionState.disconnected);
+  }
 
+  void clearSubscriptions(){
     _incomingDataSubscription?.cancel();
     _deviceStateSubscription?.cancel();
     _deviceConnection?.cancel();
@@ -161,7 +172,6 @@ class SerialConnection {
     _rxCharacteristic = null;
     _incomingDataSubscription = null;
     _deviceStateSubscription = null;
-    _updateState(SerialConnectionState.disconnected);
   }
 
   /// Close the connection entirely.
