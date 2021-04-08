@@ -82,7 +82,7 @@ class SerialConnection {
 
   Future<void> _handlePeripheralState(
       PeripheralConnectionState connectionState) async {
-    print("====================== state connection is $connectionState");
+    // print("====================== state connection is $connectionState");
     if (connectionState == PeripheralConnectionState.connected) {
       await _discoverServices();
     } else if (connectionState == PeripheralConnectionState.disconnected) {

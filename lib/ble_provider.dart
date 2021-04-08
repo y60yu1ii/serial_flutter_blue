@@ -34,7 +34,7 @@ Future<void> _checkPermissions() async {
       Permission.storage,
     ].request();
     statuses.forEach((key, value) async {
-      if (value.isDenied || value.isUndetermined) {
+      if (value.isDenied) {
         if (await key.request().isGranted) {
           print("$key is granted");
         }
